@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MedScan AI — Smart Disease Prediction</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #f0f4ff;
+  --surface: #ffffff;
+  --surface2: #f7f9ff;
+  --border: #e4e9f7;
+  --border2: #cdd5f0;
+  --text: #1a1d2e;
+  --muted: #7880a0;
+  --accent: #4361ee;
+  --accent2: #3a0ca3;
+  --red: #e63946;
+  --red-light: #fff0f1;
+  --red-border: #fcc;
+  --yellow: #d4720a;
+  --yellow-light: #fff8f0;
+  --yellow-border: #fddbb4;
+  --green: #1e9940;
+  --green-light: #f0fff5;
+  --green-border: #b3f0c8;
+  --sos: #e63946;
+  --shadow: 0 4px 24px rgba(67,97,238,0.08);
+  --shadow2: 0 8px 40px rgba(67,97,238,0.13);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:
+  radial-gradient(ellipse 60% 40% at 10% 0%,rgba(67,97,238,0.08) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 35% at 90% 100%,rgba(45,198,83,0.07) 0%,transparent 55%),
+  radial-gradient(ellipse 40% 30% at 80% 10%,rgba(230,57,70,0.05) 0%,transparent 50%);}
+.wrapper{max-width:880px;margin:0 auto;padding:40px 20px 100px;position:relative;z-index:1;}
+
+/* ─── SOS BUTTON ─── */
+.sos-fab {
+  position:fixed;bottom:28px;right:28px;z-index:9999;
+  width:72px;height:72px;border-radius:50%;
+  background:linear-gradient(135deg,#e63946,#b5181f);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  box-shadow:0 6px 28px rgba(230,57,70,0.55);
+  animation:sosPulse 2s ease-in-out infinite;
+  transition:all .2s;
+  font-family:'Outfit',sans-serif;
+}
+.sos-fab:hover{transform:scale(1.08);box-shadow:0 10px 40px rgba(230,57,70,0.7);}
+.sos-fab span:first-child{font-size:22px;line-height:1;}
+.sos-fab span:last-child{font-size:9px;font-weight:800;color:#fff;letter-spacing:2px;margin-top:2px;}
+@keyframes sosPulse{
+  0%,100%{box-shadow:0 6px 28px rgba(230,57,70,0.55),0 0 0 0 rgba(230,57,70,0.4);}
+  50%{box-shadow:0 6px 28px rgba(230,57,70,0.55),0 0 0 16px rgba(230,57,70,0);}
+}
+
+/* ─── SOS MODAL ─── */
+.sos-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,20,0.75);z-index:10000;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+.sos-overlay.open{display:flex;}
+.sos-modal{background:#fff;border-radius:28px;padding:36px;max-width:480px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.3);animation:slideUp .3s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+.sos-modal-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+.sos-modal-icon{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#e63946,#b5181f);display:flex;align-items:center;justify-content:center;font-size:28px;animation:sosPulse 2s ease-in-out infinite;}
+.sos-modal-title{font-size:24px;font-weight:800;color:#e63946;letter-spacing:-.5px;}
+.sos-modal-sub{font-size:13px;color:var(--muted);margin-top:3px;}
+.emergency-numbers{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+.emergency-number-btn{display:flex;align-items:center;gap:14px;background:#fff;border:2px solid #f0d0d2;border-radius:16px;padding:14px 18px;cursor:pointer;transition:all .2s;text-decoration:none;}
+.emergency-number-btn.ambulance{background:linear-gradient(135deg,#fff0f1,#ffe8e9);border-color:#e63946;}
+.emergency-number-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(230,57,70,0.2);border-color:#e63946;}
+.emergency-number-btn:active{transform:scale(0.97);}
+.en-icon{font-size:26px;flex-shrink:0;}
+.en-name{font-weight:700;font-size:15px;color:var(--text);}
+.en-number{font-size:22px;font-weight:800;color:#e63946;font-family:'JetBrains Mono',monospace;letter-spacing:1px;}
+.en-type{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:1px;}
+.sos-maps-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;margin-bottom:12px;transition:all .2s;text-decoration:none;}
+.sos-maps-btn:hover{background:var(--accent2);transform:translateY(-1px);}
+.sos-close{width:100%;padding:12px;background:transparent;border:1.5px solid var(--border2);border-radius:12px;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;}
+.sos-close:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ─── HEADER ─── */
+.header{text-align:center;margin-bottom:44px;}
+.logo-wrap{display:inline-flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:50px;padding:8px 20px 8px 10px;box-shadow:var(--shadow);margin-bottom:28px;}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.logo-text{font-size:14px;font-weight:700;color:var(--text);}
+.logo-text span{color:var(--accent);}
+h1{font-size:clamp(30px,5vw,52px);font-weight:800;line-height:1.08;letter-spacing:-2px;color:var(--text);margin-bottom:14px;}
+h1 em{font-style:normal;color:var(--accent);}
+.subtitle{color:var(--muted);font-size:15px;line-height:1.7;max-width:460px;margin:0 auto 28px;}
+.risk-legend{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;}
+.legend-pill{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:30px;padding:6px 14px;font-size:12px;font-weight:600;box-shadow:var(--shadow);}
+.legend-dot{width:10px;height:10px;border-radius:50%;}
+
+/* ─── FORM ─── */
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:36px;box-shadow:var(--shadow2);margin-bottom:24px;}
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.section-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.section-title{font-size:16px;font-weight:700;color:var(--text);}
+.section-subtitle{font-size:12px;color:var(--muted);margin-top:1px;}
+.section-divider{border:none;border-top:1px solid var(--border);margin:28px 0;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.field-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;}
+.required{color:var(--red);}
+input[type=text],input[type=number],select,textarea{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;color:var(--text);font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s,background .2s;-webkit-appearance:none;appearance:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 4px rgba(67,97,238,.1);}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237880a0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+select option{background:#fff;}
+textarea{resize:vertical;min-height:90px;}
+
+/* ─── TAGS ─── */
+.tag-field-wrap{position:relative;}
+.tag-box{background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;min-height:56px;display:flex;flex-wrap:wrap;gap:7px;align-items:center;cursor:text;transition:border-color .2s,box-shadow .2s,background .2s;}
+.tag-box:focus-within{border-color:var(--accent);background:#fff;box-shadow:0 0 0 4px rgba(67,97,238,.1);}
+.tag-box input{flex:1;min-width:140px;background:transparent;border:none;padding:3px 4px;font-size:14px;box-shadow:none!important;outline:none;}
+.tag{display:inline-flex;align-items:center;gap:5px;background:#eef1ff;border:1px solid #c5ceff;border-radius:20px;padding:4px 10px 4px 12px;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;transition:all .15s;}
+.tag:hover{background:#ffe4e6;border-color:#fbb;color:var(--red);}
+.tag-hint{font-size:11px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:5px;}
+.suggestions-wrap{position:absolute;z-index:999;left:0;right:0;top:calc(100% + 6px);background:#fff;border:1.5px solid var(--border2);border-radius:14px;padding:8px;box-shadow:0 8px 32px rgba(67,97,238,.15);display:none;}
+.sug-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:13px;color:var(--muted);cursor:pointer;transition:all .12s;}
+.sug-item:hover{background:#eef1ff;color:var(--accent);}
+.sug-item::before{content:'＋';font-size:12px;opacity:.5;}
+
+/* ─── SUBMIT ─── */
+.btn-submit{width:100%;padding:17px;margin-top:24px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 24px rgba(67,97,238,.35);}
+.btn-submit:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(67,97,238,.45);}
+.btn-submit:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;}
+.error-box{background:#fff0f1;border:1.5px solid #fcc;border-radius:12px;padding:12px 16px;font-size:13px;color:var(--red);margin-top:16px;display:none;align-items:center;gap:8px;}
+
+/* ─── LOADING ─── */
+.loading-screen{display:none;text-align:center;padding:80px 20px;background:var(--surface);border-radius:24px;border:1px solid var(--border);box-shadow:var(--shadow2);}
+.pulse-ring{width:72px;height:72px;border-radius:50%;margin:0 auto 24px;border:3px solid #e4e9f7;border-top-color:var(--accent);animation:spin .85s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-label{font-size:18px;font-weight:600;color:var(--text);margin-bottom:8px;}
+.loading-sub{font-size:13px;color:var(--muted);}
+.loading-steps{display:flex;justify-content:center;gap:6px;margin-top:24px;flex-wrap:wrap;}
+.loading-step{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:11px;color:var(--muted);}
+
+/* ─── RESULTS ─── */
+.results{display:none;}
+.risk-banner{border-radius:24px;padding:32px 36px;margin-bottom:20px;border:2px solid;position:relative;overflow:hidden;}
+.risk-banner.high{background:linear-gradient(135deg,#fff0f1,#fff5f6);border-color:#f8b4b8;}
+.risk-banner.moderate{background:linear-gradient(135deg,#fff8f0,#fffaf5);border-color:#fdd9a0;}
+.risk-banner.low{background:linear-gradient(135deg,#f0fff5,#f5fffa);border-color:#a8edbe;}
+.risk-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:28px;}
+.risk-eyebrow{font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:8px;opacity:.6;}
+.risk-main{font-size:clamp(28px,5vw,44px);font-weight:800;letter-spacing:-1.5px;line-height:1.1;margin-bottom:10px;}
+.risk-reason{font-size:14px;line-height:1.7;max-width:420px;opacity:.75;}
+.risk-pct-wrap{text-align:center;flex-shrink:0;}
+.risk-pct{font-size:64px;font-weight:800;letter-spacing:-4px;line-height:1;font-family:'JetBrains Mono',monospace;}
+.risk-pct-label{font-size:10px;font-weight:700;letter-spacing:2px;opacity:.6;margin-top:4px;}
+.meter-track{height:18px;background:rgba(0,0,0,.07);border-radius:9px;overflow:hidden;margin-bottom:10px;}
+.meter-bar{height:100%;border-radius:9px;width:0%;transition:width 1.4s cubic-bezier(.34,1.4,.64,1);position:relative;}
+.meter-bar::after{content:'';position:absolute;right:2px;top:3px;bottom:3px;width:5px;border-radius:3px;background:rgba(255,255,255,.7);}
+.meter-bar.high{background:linear-gradient(90deg,#c0392b,#e63946,#ff6b75);}
+.meter-bar.moderate{background:linear-gradient(90deg,#d4720a,#f4a261,#ffc08a);}
+.meter-bar.low{background:linear-gradient(90deg,#1e9940,#2dc653,#5dd97a);}
+.meter-ticks{display:flex;justify-content:space-between;font-size:10px;font-family:'JetBrains Mono',monospace;opacity:.55;}
+.zone-labels{display:flex;margin-top:8px;border-radius:8px;overflow:hidden;}
+.zone{flex:1;text-align:center;padding:4px 0;font-size:10px;font-weight:700;letter-spacing:.5px;}
+.zone.low{background:rgba(45,198,83,.12);color:var(--green);}
+.zone.moderate{background:rgba(244,162,97,.12);color:var(--yellow);}
+.zone.high{background:rgba(230,57,70,.12);color:var(--red);}
+.result-card{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:28px;margin-bottom:16px;box-shadow:var(--shadow);}
+.card-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.card-header-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.card-header-title{font-size:17px;font-weight:700;color:var(--text);}
+.card-header-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.conditions-list{display:flex;flex-direction:column;gap:10px;}
+.condition-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;transition:border-color .2s;}
+.condition-row:hover{border-color:var(--border2);}
+.cond-icon{font-size:22px;flex-shrink:0;margin-top:1px;}
+.cond-name{font-weight:600;font-size:15px;color:var(--text);margin-bottom:3px;}
+.cond-desc{font-size:12px;color:var(--muted);line-height:1.55;}
+.likelihood-chip{flex-shrink:0;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;border:1.5px solid;white-space:nowrap;margin-left:8px;}
+.likelihood-chip.high{background:var(--red-light);border-color:var(--red-border);color:var(--red);}
+.likelihood-chip.moderate{background:var(--yellow-light);border-color:var(--yellow-border);color:var(--yellow);}
+.likelihood-chip.low{background:var(--green-light);border-color:var(--green-border);color:var(--green);}
+.doctor-banner{border-radius:18px;padding:22px 24px;background:linear-gradient(135deg,#eef1ff,#e8ecff);border:1.5px solid #c5ceff;display:flex;gap:18px;align-items:flex-start;margin-bottom:16px;}
+.doctor-avatar{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
+.doctor-type{font-size:21px;font-weight:800;color:var(--accent);letter-spacing:-.5px;margin-bottom:4px;}
+.doctor-reason{font-size:13px;color:#5060a0;line-height:1.6;}
+.urgency-chip{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:var(--accent);color:#fff;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;}
+.hospitals-list{display:flex;flex-direction:column;gap:12px;}
+.hospital-card{background:var(--surface2);border:1.5px solid var(--border);border-radius:16px;padding:18px 20px;transition:all .2s;display:flex;gap:16px;align-items:flex-start;}
+.hospital-card:hover{border-color:var(--border2);box-shadow:var(--shadow);transform:translateY(-1px);}
+.hospital-num{width:34px;height:34px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.hospital-name{font-weight:600;font-size:15px;color:var(--text);margin-bottom:3px;}
+.hospital-addr{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;}
+.hospital-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-maps-link{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:600;text-decoration:none;transition:all .2s;}
+.btn-maps-link:hover{background:var(--accent2);transform:translateY(-1px);}
+.btn-call-link{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);border:1.5px solid var(--green-border);color:#1e8c40;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:600;text-decoration:none;transition:all .2s;}
+.alt-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.alt-card{background:var(--surface2);border:1.5px solid var(--border);border-radius:16px;padding:18px;transition:border-color .2s;}
+.alt-card:hover{border-color:var(--green-border);}
+.alt-icon-big{font-size:32px;margin-bottom:10px;display:block;}
+.alt-title{font-weight:700;font-size:14px;color:var(--text);margin-bottom:5px;}
+.alt-desc{font-size:12px;color:var(--muted);line-height:1.6;}
+.tips-list{display:flex;flex-direction:column;}
+.tip-row{display:flex;gap:14px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--border);}
+.tip-row:last-child{border-bottom:none;}
+.tip-icon{font-size:20px;flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;}
+.tip-text{font-size:13px;color:var(--muted);line-height:1.6;padding-top:4px;}
+.disclaimer{background:#f8f9fe;border:1.5px solid var(--border);border-radius:14px;padding:16px 20px;font-size:12px;color:#9098b8;line-height:1.8;margin-top:16px;display:flex;gap:10px;}
+.btn-reset{width:100%;padding:15px;background:#fff;border:1.5px solid var(--border2);border-radius:14px;color:var(--muted);font-size:15px;font-weight:600;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .2s;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-reset:hover{border-color:var(--accent);color:var(--accent);background:#f0f4ff;}
+
+/* ─── RESULT SOS STRIP ─── */
+.sos-result-strip{background:linear-gradient(135deg,#fff0f1,#ffe8e9);border:2px solid #e63946;border-radius:18px;padding:20px 24px;margin-bottom:16px;display:flex;align-items:center;gap:16px;}
+.sos-strip-btn{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#e63946,#b5181f);color:#fff;border:none;border-radius:12px;padding:11px 20px;font-size:14px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;flex-shrink:0;transition:all .2s;}
+.sos-strip-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(230,57,70,0.4);}
+
+.fade-in{animation:fadeUp .5s ease forwards;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+.s1{animation-delay:.05s;opacity:0;}.s2{animation-delay:.12s;opacity:0;}.s3{animation-delay:.2s;opacity:0;}
+.s4{animation-delay:.28s;opacity:0;}.s5{animation-delay:.36s;opacity:0;}.s6{animation-delay:.44s;opacity:0;}
+@media(max-width:640px){
+  .grid-2,.grid-3,.alt-grid{grid-template-columns:1fr;}
+  .form-card{padding:24px 20px;}.risk-banner{padding:24px 20px;}
+  .risk-top{flex-direction:column;}.risk-pct{font-size:48px;}
+  .doctor-banner{flex-direction:column;}
+  .sos-result-strip{flex-direction:column;text-align:center;}
+  .sos-fab{bottom:16px;right:16px;width:64px;height:64px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ SOS FLOATING BUTTON ══ -->
+<button class="sos-fab" onclick="openSOS()" title="Emergency SOS">
+  <span>🆘</span>
+  <span>SOS</span>
+</button>
+
+<!-- ══ SOS MODAL ══ -->
+<div class="sos-overlay" id="sosOverlay" onclick="closeSOS(event)">
+  <div class="sos-modal" onclick="event.stopPropagation()">
+    <div class="sos-modal-header">
+      <div class="sos-modal-icon">🚨</div>
+      <div>
+        <div class="sos-modal-title">EMERGENCY SOS</div>
+        <div class="sos-modal-sub">Call ambulance or emergency services immediately</div>
+      </div>
+    </div>
+    <div class="emergency-numbers" id="emergencyNumbers">
+      <!-- Numbers injected by JS -->
+    </div>
+    <a class="sos-maps-btn" id="sosMapsBtn" href="https://www.google.com/maps/search/hospital+near+me" target="_blank">
+      📍 Find Nearest Hospital on Maps
+    </a>
+    <button class="sos-close" onclick="closeSOS()">✕ Close</button>
+  </div>
+</div>
+
+<div class="wrapper">
+
+  <!-- ══ HEADER ══ -->
+  <div class="header">
+    <div class="logo-wrap">
+      <div class="logo-icon">🩺</div>
+      <div class="logo-text"><span>MedScan</span> AI</div>
+    </div>
+    <h1>Smart Disease<br><em>Prediction System</em></h1>
+    <p class="subtitle">Enter your symptoms and get an AI-powered risk assessment with doctor recommendations and nearby hospital links.</p>
+    <div class="risk-legend">
+      <div class="legend-pill"><div class="legend-dot" style="background:#e63946"></div>🔴 High Risk (≥65%)</div>
+      <div class="legend-pill"><div class="legend-dot" style="background:#f4a261"></div>🟡 Moderate Risk (35–64%)</div>
+      <div class="legend-pill"><div class="legend-dot" style="background:#2dc653"></div>🟢 Low Risk (&lt;35%)</div>
+    </div>
+  </div>
+
+  <!-- ══ FORM ══ -->
+  <div class="form-card" id="formCard">
+    <div class="section-header">
+      <div class="section-icon" style="background:#eef1ff;">👤</div>
+      <div><div class="section-title">Patient Information</div><div class="section-subtitle">Basic details help refine the diagnosis</div></div>
+    </div>
+    <div class="grid-3" style="margin-bottom:24px;">
+      <div>
+        <div class="field-label"><span>🎂</span> Age <span class="required">*</span></div>
+        <input type="number" id="age" placeholder="e.g. 28" min="1" max="120"/>
+      </div>
+      <div>
+        <div class="field-label"><span>⚧</span> Gender <span class="required">*</span></div>
+        <select id="gender">
+          <option value="">Select…</option>
+          <option value="Male">👨 Male</option>
+          <option value="Female">👩 Female</option>
+          <option value="Other">🧑 Other</option>
+          <option value="Prefer not to say">🤐 Prefer not to say</option>
+        </select>
+      </div>
+      <div>
+        <div class="field-label"><span>🏥</span> Existing Conditions</div>
+        <input type="text" id="existing" placeholder="e.g. Diabetes, None"/>
+      </div>
+    </div>
+    <hr class="section-divider"/>
+    <div class="section-header">
+      <div class="section-icon" style="background:#fff0f1;">🤒</div>
+      <div><div class="section-title">Symptoms <span style="color:var(--red)">*</span></div><div class="section-subtitle">Add at least 1 — type and press Enter or pick below</div></div>
+    </div>
+    <div class="tag-field-wrap" style="margin-bottom:10px;">
+      <div class="tag-box" id="tagBox" onclick="document.getElementById('symptomInput').focus()">
+        <input type="text" id="symptomInput" placeholder="Type symptom + Enter…" autocomplete="off"/>
+      </div>
+      <div class="suggestions-wrap" id="suggestions"></div>
+    </div>
+    <div class="tag-hint"><span>💡</span><span id="tagHintText">Add at least 1 symptoms to continue</span></div>
+    <div style="margin-top:16px;">
+      <div class="field-label" style="margin-bottom:10px;"><span>⚡</span> Quick Add</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;" id="quickSymptoms"></div>
+    </div>
+    <hr class="section-divider"/>
+    <div class="section-header">
+      <div class="section-icon" style="background:#f0fff5;">📋</div>
+      <div><div class="section-title">More Details</div><div class="section-subtitle">Duration and description improve accuracy</div></div>
+    </div>
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div>
+        <div class="field-label"><span>⏱️</span> Duration <span class="required">*</span></div>
+        <select id="duration">
+          <option value="">Select duration…</option>
+          <option value="Less than 24 hours">⚡ Less than 24 hours</option>
+          <option value="1-3 days">📅 1–3 days</option>
+          <option value="4-7 days">📅 4–7 days</option>
+          <option value="1-2 weeks">🗓 1–2 weeks</option>
+          <option value="2-4 weeks">🗓 2–4 weeks</option>
+          <option value="More than a month">📆 More than a month</option>
+          <option value="Chronic">♾️ Chronic / ongoing</option>
+        </select>
+      </div>
+      <div>
+        <div class="field-label"><span>📝</span> Description <span style="color:var(--muted);font-size:10px;">(OPTIONAL)</span></div>
+        <textarea id="description" placeholder="Describe how you feel in your own words…" style="height:52px;"></textarea>
+      </div>
+    </div>
+    <div class="error-box" id="errorBox"><span>⚠️</span><span id="errorText"></span></div>
+    <button class="btn-submit" id="submitBtn" onclick="runAnalysis()">
+      <span>🔬</span> Analyze My Symptoms
+    </button>
+  </div>
+
+  <!-- ══ LOADING ══ -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="pulse-ring"></div>
+    <div class="loading-label">Analyzing your symptoms…</div>
+    <div class="loading-sub">Our AI engine is reviewing your inputs</div>
+    <div class="loading-steps">
+      <div class="loading-step">🔍 Checking symptoms</div>
+      <div class="loading-step">🧬 Matching conditions</div>
+      <div class="loading-step">📊 Calculating risk</div>
+      <div class="loading-step">💊 Finding care options</div>
+    </div>
+  </div>
+
+  <!-- ══ RESULTS ══ -->
+  <div class="results" id="results"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+//  CONFIG — change this to your backend URL if deploying separately
+// ═══════════════════════════════════════════════════════════════════════════
+const API_BASE = window.location.origin; // same server by default
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SOS SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
+const EMERGENCY_NUMBERS = [
+  { name:'Ambulance (EMRI)',   number:'108', icon:'🚑', type:'ambulance', primary:true },
+  { name:'National Emergency', number:'112', icon:'🚨', type:'emergency', primary:true },
+  { name:'Ambulance (PM-JAY)', number:'104', icon:'🚑', type:'ambulance', primary:false },
+  { name:'Police',             number:'100', icon:'👮', type:'police',    primary:false },
+  { name:'Fire & Rescue',      number:'101', icon:'🚒', type:'fire',      primary:false },
+];
+
+let userLat = null, userLng = null;
+
+// Try to get location on load silently
+navigator.geolocation && navigator.geolocation.getCurrentPosition(
+  pos => { userLat = pos.coords.latitude; userLng = pos.coords.longitude; updateSOSMapLink(); },
+  () => {}
+);
+
+function updateSOSMapLink() {
+  const btn = document.getElementById('sosMapsBtn');
+  if (btn && userLat && userLng) {
+    btn.href = `https://www.google.com/maps/search/hospital/@${userLat},${userLng},14z`;
+  }
+}
+
+function openSOS() {
+  const container = document.getElementById('emergencyNumbers');
+  container.innerHTML = EMERGENCY_NUMBERS.map(n => `
+    <a class="emergency-number-btn ${n.type === 'ambulance' ? 'ambulance' : ''}"
+       href="tel:${n.number}"
+       onclick="logSOS('${n.number}')">
+      <span class="en-icon">${n.icon}</span>
+      <div style="flex:1;">
+        <div class="en-name">${n.name}</div>
+        <div class="en-type">${n.type}</div>
+      </div>
+      <div class="en-number">${n.number}</div>
+    </a>
+  `).join('');
+  document.getElementById('sosOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // Notify backend
+  fetch(`${API_BASE}/api/sos`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ lat:userLat, lng:userLng, patientInfo:{ time: new Date().toISOString() } })
+  }).catch(()=>{});
+}
+
+function closeSOS(e) {
+  if (e && e.target !== document.getElementById('sosOverlay')) return;
+  document.getElementById('sosOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+window.closeSOS = closeSOS;
+
+function logSOS(number) {
+  console.log(`🚨 SOS call initiated to ${number}`);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SYMPTOM TAG UI
+// ═══════════════════════════════════════════════════════════════════════════
+const COMMON = ['Fever','Headache','Cough','Fatigue','Nausea','Chest Pain','Sore Throat','Dizziness','Rash','Vomiting','Back Pain','Joint Pain','Shortness of Breath','Abdominal Pain'];
+const ALL_SYMPTOMS = [...COMMON,'Chills','Diarrhea','Loss of Appetite','Muscle Aches','Runny Nose','Sweating','Blurred Vision','Ear Pain','Insomnia','Palpitations','Swelling','Numbness','Weakness','Night Sweats','Frequent Urination','Excessive Thirst','Weight Loss','Confusion','Anxiety','High Fever','Severe Headache','Dark Urine','Jaundice','Wheezing','Chest Tightness'];
+
+const qw = document.getElementById('quickSymptoms');
+COMMON.forEach(s => {
+  const b = document.createElement('div');
+  b.style.cssText = 'cursor:pointer;background:#f0f4ff;border:1.5px solid #c5ceff;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;color:#4361ee;transition:all 0.15s;user-select:none;';
+  b.textContent = s;
+  b.onclick = () => { addTag(s.toLowerCase()); b.style.opacity='0.4'; b.style.pointerEvents='none'; };
+  qw.appendChild(b);
+});
+
+let tags = [];
+const tagBox = document.getElementById('tagBox');
+const symptomInput = document.getElementById('symptomInput');
+const suggestionsEl = document.getElementById('suggestions');
+
+symptomInput.addEventListener('input', () => {
+  const v = symptomInput.value.trim().toLowerCase();
+  if (v.length < 2) { suggestionsEl.style.display='none'; return; }
+  const m = ALL_SYMPTOMS.filter(s => s.toLowerCase().includes(v) && !tags.includes(s.toLowerCase())).slice(0,6);
+  if (!m.length) { suggestionsEl.style.display='none'; return; }
+  suggestionsEl.innerHTML = m.map(s=>`<div class="sug-item" onclick="addTag('${s.toLowerCase()}')">${s}</div>`).join('');
+  suggestionsEl.style.display='block';
+});
+symptomInput.addEventListener('keydown', e => {
+  if (e.key==='Enter' && symptomInput.value.trim()) { addTag(symptomInput.value.trim().toLowerCase()); e.preventDefault(); }
+  if (e.key==='Backspace' && !symptomInput.value && tags.length) removeTag(tags[tags.length-1]);
+});
+document.addEventListener('click', e => { if (!tagBox.contains(e.target)) suggestionsEl.style.display='none'; });
+
+function addTag(val) { val=val.trim(); if(!val||tags.includes(val)) return; tags.push(val); renderTags(); symptomInput.value=''; suggestionsEl.style.display='none'; updateHint(); symptomInput.focus(); }
+function removeTag(val) { tags=tags.filter(t=>t!==val); renderTags(); updateHint(); }
+function renderTags() {
+  document.querySelectorAll('.tag').forEach(t=>t.remove());
+  tags.forEach(tag => {
+    const el = document.createElement('span');
+    el.className='tag'; el.innerHTML=`${tag} <span style="opacity:0.6">×</span>`;
+    el.onclick = () => removeTag(tag); tagBox.insertBefore(el, symptomInput);
+  });
+}
+function updateHint() {
+  const h = document.getElementById('tagHintText');
+  if (!tags.length) { h.textContent='Add at least 1 symptoms to continue'; h.style.color=''; }
+  //else if (tags.length===1) { h.textContent=' symptom added '; h.style.color='#f4a261'; }
+  else { h.textContent=`✓ ${tags.length} symptoms added — ready to analyze`; h.style.color='var(--green)'; }
+}
+function showErr(msg) {
+  const b=document.getElementById('errorBox'),t=document.getElementById('errorText');
+  t.textContent=msg; b.style.display='flex'; b.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ANALYSIS — calls backend API
+// ═══════════════════════════════════════════════════════════════════════════
+async function runAnalysis() {
+  const age = document.getElementById('age').value.trim();
+  const gender = document.getElementById('gender').value;
+  const duration = document.getElementById('duration').value;
+  const existing = document.getElementById('existing').value.trim();
+  const description = document.getElementById('description').value.trim();
+
+  document.getElementById('errorBox').style.display='none';
+  if (!age) return showErr('Please enter your age.');
+  if (!gender) return showErr('Please select your gender.');
+  if (tags.length < 1) return showErr('Please add at least 1 symptoms.');
+  if (!duration) return showErr('Please select how long you have had these symptoms.');
+
+  document.getElementById('formCard').style.display='none';
+  document.getElementById('loadingScreen').style.display='block';
+  document.getElementById('results').style.display='none';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symptoms: tags, age, gender, duration, existing, description })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || 'Analysis failed');
+    document.getElementById('loadingScreen').style.display='none';
+    renderResults(data.result);
+  } catch (err) {
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('formCard').style.display='block';
+    showErr(`Error: ${err.message}. Make sure the server is running.`);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  RENDER RESULTS
+// ═══════════════════════════════════════════════════════════════════════════
+function renderResults(r) {
+  const el = document.getElementById('results');
+  const risk = r.riskLevel.toLowerCase();
+  const prob = r.riskProbability;
+  const riskEmoji = risk==='high'?'🔴':risk==='moderate'?'🟡':'🟢';
+  const riskColor = risk==='high'?'#e63946':risk==='moderate'?'#d4720a':'#1e9940';
+  let html = '';
+
+  // ── Risk Banner ──
+  html += `<div class="risk-banner ${risk} fade-in s1">
+    <div class="risk-top">
+      <div>
+        <div class="risk-eyebrow" style="color:${riskColor};">${riskEmoji} RISK ASSESSMENT RESULT</div>
+        <div class="risk-main" style="color:${riskColor};">${r.riskLevel.toUpperCase()} RISK</div>
+        <div class="risk-reason" style="color:${riskColor};">${r.riskReason}</div>
+      </div>
+      <div class="risk-pct-wrap">
+        <div class="risk-pct" style="color:${riskColor};">${prob}%</div>
+        <div class="risk-pct-label" style="color:${riskColor};">RISK PROBABILITY</div>
+      </div>
+    </div>
+    <div class="meter-track"><div class="meter-bar ${risk}" id="meterBar"></div></div>
+    <div class="meter-ticks"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+    <div class="zone-labels" style="margin-top:6px;">
+      <div class="zone low">🟢 LOW (0–34%)</div>
+      <div class="zone moderate">🟡 MODERATE (35–64%)</div>
+      <div class="zone high">🔴 HIGH (65–100%)</div>
+    </div>
+  </div>`;
+
+  // ── SOS Strip for High Risk ──
+  if (risk === 'high') {
+    html += `<div class="sos-result-strip fade-in s1">
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:16px;color:#e63946;margin-bottom:4px;">🚨 High Risk Detected — Seek Emergency Care Now</div>
+        <div style="font-size:13px;color:#7a2020;">Your symptoms indicate a potentially serious condition. Call 108 (Ambulance) or 112 immediately, or click SOS for all emergency numbers.</div>
+      </div>
+      <button class="sos-strip-btn" onclick="openSOS()">🆘 SOS / CALL 108</button>
+    </div>`;
+  }
+
+  // ── Possible Conditions ──
+  html += `<div class="result-card fade-in s2">
+    <div class="card-header">
+      <div class="card-header-icon" style="background:#fff0f1;">🧬</div>
+      <div><div class="card-header-title">Possible Conditions</div><div class="card-header-sub">Ranked by likelihood based on your symptoms</div></div>
+    </div>
+    <div class="conditions-list">`;
+  r.conditions.forEach(c => {
+    html += `<div class="condition-row">
+      <span class="cond-icon">${c.icon||'🩺'}</span>
+      <div style="flex:1;"><div class="cond-name">${c.name}</div><div class="cond-desc">${c.description}</div></div>
+      <span class="likelihood-chip ${c.likelihood.toLowerCase()}">${c.likelihood}</span>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  // ── Doctor Recommendation ──
+  if (r.doctorType) {
+    html += `<div class="doctor-banner fade-in s3">
+      <div class="doctor-avatar">👨‍⚕️</div>
+      <div>
+        <div class="card-header-sub" style="margin-bottom:4px;">RECOMMENDED SPECIALIST</div>
+        <div class="doctor-type">${r.doctorType}</div>
+        <div class="doctor-reason">${r.doctorReason}</div>
+        <div class="urgency-chip">🕐 Consult: ${r.consultUrgency}</div>
+      </div>
+    </div>`;
+
+    // Hospitals
+    html += `<div class="result-card fade-in s4">
+      <div class="card-header">
+        <div class="card-header-icon" style="background:#eef1ff;">🏥</div>
+        <div><div class="card-header-title">Nearby Hospitals</div><div class="card-header-sub">Click to open in Google Maps with directions</div></div>
+      </div>
+      <div id="hospitalsContainer"><div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">📍 Detecting your location…</div></div>
+    </div>`;
+    setTimeout(() => loadHospitals(r.doctorType), 200);
+  }
+
+  // ── Alternative Measures (Low Risk) ──
+  if (risk === 'low' && r.alternativeMeasures?.length) {
+    html += `<div class="result-card fade-in s3">
+      <div class="card-header">
+        <div class="card-header-icon" style="background:#f0fff5;">🌿</div>
+        <div><div class="card-header-title">Alternative Measures</div><div class="card-header-sub">Home care steps you can take right now</div></div>
+      </div>
+      <div class="alt-grid">`;
+    r.alternativeMeasures.forEach(m => {
+      html += `<div class="alt-card"><span class="alt-icon-big">${m.icon||'💊'}</span><div class="alt-title">${m.title}</div><div class="alt-desc">${m.description}</div></div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // ── Care Tips ──
+  html += `<div class="result-card fade-in s5">
+    <div class="card-header">
+      <div class="card-header-icon" style="background:#eef1ff;">💡</div>
+      <div><div class="card-header-title">Immediate Care Tips</div><div class="card-header-sub">Actions to take right now</div></div>
+    </div>
+    <div class="tips-list">`;
+  r.careTips.forEach(t => {
+    const tip = typeof t === 'string' ? {text:t,icon:'✦'} : t;
+    html += `<div class="tip-row"><div class="tip-icon">${tip.icon||'✦'}</div><div class="tip-text">${tip.text}</div></div>`;
+  });
+  html += `</div></div>`;
+
+  // ── Disclaimer & Reset ──
+  html += `<div class="disclaimer fade-in s6"><span style="font-size:18px;flex-shrink:0;">⚕️</span><span>${r.disclaimer}</span></div>`;
+  html += `<button class="btn-reset" onclick="resetForm()">🔄 Start New Analysis</button>`;
+
+  el.innerHTML = html;
+  el.style.display = 'block';
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(() => { const b = document.getElementById('meterBar'); if(b) b.style.width = prob+'%'; }, 300);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  HOSPITAL LOADER
+// ═══════════════════════════════════════════════════════════════════════════
+function loadHospitals(doctorType) {
+  const container = document.getElementById('hospitalsContainer');
+  if (!container) return;
+  if (userLat && userLng) {
+    renderHospitalsWithLocation(userLat, userLng, doctorType, container);
+  } else {
+    navigator.geolocation
+      ? navigator.geolocation.getCurrentPosition(
+          pos => { userLat=pos.coords.latitude; userLng=pos.coords.longitude; renderHospitalsWithLocation(userLat,userLng,doctorType,container); },
+          () => renderHospitalsFallback(doctorType, container)
+        )
+      : renderHospitalsFallback(doctorType, container);
+  }
+}
+
+function renderHospitalsWithLocation(lat, lng, doctorType, container) {
+  const searches = [
+    { name:`${doctorType} Specialist Hospital`, query:`${doctorType} specialist hospital`, icon:'🏥' },
+    { name:'Nearest General Hospital',          query:'general hospital',                  icon:'🏨' },
+    { name:'Emergency Care Center',             query:'emergency hospital',                icon:'🚑' },
+    { name:'Multi-Specialty Medical Center',    query:'multispecialty hospital',           icon:'🩺' },
+  ];
+  let html = `<div style="background:#f0f4ff;border:1.5px solid #c5ceff;border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:var(--accent);display:flex;gap:8px;">
+    <span>📍</span><span>Location detected. Click any button to open Google Maps with real hospital names, ratings, phone numbers and directions.</span>
+  </div><div class="hospitals-list">`;
+  searches.forEach((s, i) => {
+    const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(s.query)}/@${lat},${lng},14z`;
+    html += `<div class="hospital-card">
+      <div class="hospital-num">${i+1}</div>
+      <div style="flex:1;">
+        <div class="hospital-name">${s.icon} ${s.name}</div>
+        <div class="hospital-addr">📍 Near your current location • Google Maps shows real names, ratings, hours & phone numbers</div>
+        <div class="hospital-actions">
+          <a class="btn-maps-link" href="${mapsUrl}" target="_blank">📍 Open in Google Maps</a>
+          <a class="btn-call-link" href="https://www.google.com/maps/search/hospital/@${lat},${lng},13z" target="_blank">🏥 All Hospitals</a>
+        </div>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function renderHospitalsFallback(doctorType, container) {
+  container.innerHTML = `
+  <div style="background:#fffbec;border:1.5px solid #f0d070;border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:#7a5800;display:flex;gap:8px;">
+    <span>📍</span><span>Location access denied. Use these links to search manually.</span>
+  </div>
+  <div class="hospitals-list">
+    <div class="hospital-card">
+      <div class="hospital-num">1</div>
+      <div style="flex:1;">
+        <div class="hospital-name">🏥 ${doctorType} Hospitals</div>
+        <div class="hospital-addr">Find the nearest hospital with ${doctorType} services</div>
+        <div class="hospital-actions">
+          <a class="btn-maps-link" href="https://www.google.com/maps/search/${encodeURIComponent(doctorType+' hospital near me')}" target="_blank">📍 Search Google Maps</a>
+        </div>
+      </div>
+    </div>
+    <div class="hospital-card">
+      <div class="hospital-num">2</div>
+      <div style="flex:1;">
+        <div class="hospital-name">🚑 Emergency Rooms</div>
+        <div class="hospital-addr">Find the nearest emergency room in your area</div>
+        <div class="hospital-actions">
+          <a class="btn-maps-link" href="https://www.google.com/maps/search/hospital+near+me" target="_blank">🏥 All Hospitals</a>
+          <a class="btn-call-link" href="https://www.google.com/maps/search/emergency+room+near+me" target="_blank">🚨 Emergency Rooms</a>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function resetForm() {
+  tags=[]; renderTags(); updateHint();
+  ['age','existing','description'].forEach(id=>document.getElementById(id).value='');
+  ['gender','duration'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('errorBox').style.display='none';
+  document.getElementById('results').style.display='none';
+  document.getElementById('results').innerHTML='';
+  document.getElementById('formCard').style.display='block';
+  document.querySelectorAll('#quickSymptoms div').forEach(b=>{b.style.opacity='1';b.style.pointerEvents='auto';});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
